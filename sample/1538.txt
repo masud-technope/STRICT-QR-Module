@@ -1,0 +1,8 @@
+Problem displaying initialisers in HTMLLayout
+Whenever a stack trace is captured that involves either a static initialiser or 
+a constructor, the JVM prints out the method name (either "init" or "clinit") 
+and encapsulates less than and greater than tags around it.
+
+However, the HTMLLayout doesn't convert the symbols to their HTML equivalent 
+(can't remember what they are, sorry), so the method name is interpreted as a 
+HTML tag (and thus not shown up).
