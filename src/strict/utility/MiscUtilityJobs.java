@@ -58,8 +58,8 @@ public class MiscUtilityJobs {
 		for (String key : tokenScoreMap.keySet()) {
 			QueryToken qtoken = tokenScoreMap.get(key);
 			if (type.equals("TR")) {
-				if (qtoken.tokenRankScore > maxScore)
-					maxScore = qtoken.tokenRankScore;
+				if (qtoken.textRankScore > maxScore)
+					maxScore = qtoken.textRankScore;
 			} else if (type.equals("PR")) {
 				if (qtoken.posRankScore > maxScore)
 					maxScore = qtoken.posRankScore;
@@ -72,7 +72,7 @@ public class MiscUtilityJobs {
 		for (String key : tokenScoreMap.keySet()) {
 			QueryToken qtoken = tokenScoreMap.get(key);
 			if (type.equals("TR")) {
-				qtoken.tokenRankScore = qtoken.tokenRankScore / maxScore;
+				qtoken.textRankScore = qtoken.textRankScore / maxScore;
 			} else if (type.equals("PR")) {
 				qtoken.posRankScore = qtoken.posRankScore / maxScore;
 			} else if (type.equals("TS")) {

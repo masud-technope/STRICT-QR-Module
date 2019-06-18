@@ -44,9 +44,9 @@ public class MyItemSorterV2 {
 					Entry<String, QueryToken> e2) {
 				// TODO Auto-generated method stub
 				QueryToken t1 = e1.getValue();
-				Double v1 = new Double(t1.tokenRankScore);
+				Double v1 = new Double(t1.textRankScore);
 				QueryToken t2 = e2.getValue();
-				Double v2 = new Double(t2.tokenRankScore);
+				Double v2 = new Double(t2.textRankScore);
 				return v2.compareTo(v1);
 			}
 		});

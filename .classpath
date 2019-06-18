@@ -18,10 +18,10 @@
 	<classpathentry kind="lib" path="strict.lib/lucene-core-6.2.0.jar"/>
 	<classpathentry kind="lib" path="strict.lib/lucene-queries-6.2.0.jar"/>
 	<classpathentry kind="lib" path="strict.lib/lucene-queryparser-6.2.0.jar"/>
-	<classpathentry kind="lib" path="strict.lib/qdiff.jar"/>
 	<classpathentry kind="lib" path="strict.lib/slf4j-api-1.7.17.jar"/>
 	<classpathentry kind="lib" path="strict.lib/weka.jar"/>
 	<classpathentry kind="lib" path="strict.lib/xom.jar"/>
 	<classpathentry kind="lib" path="strict.lib/stanford-postagger-3.9.2.jar"/>
+	<classpathentry kind="lib" path="strict.lib/ca.usask.cs.srlab.query-difficulty.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
