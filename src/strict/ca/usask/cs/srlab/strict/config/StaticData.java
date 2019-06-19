@@ -1,13 +1,17 @@
 package strict.ca.usask.cs.srlab.strict.config;
 
-public interface StaticData {
+public class StaticData {
 
 	// public final attributes
-	public static String HOME_DIR = "F:/MyWorks/Thesis Works/PhDThesisTool";
-	// public static String HOME_DIR="C:/MyWorks/PhDThesisTool";
+	// public static String HOME_DIR = "F:/MyWorks/Thesis Works/PhDThesisTool";
+	public static String HOME_DIR = "C:/MyWorks/PhDThesisTool";
 
-	String INDEX_FOLDER = HOME_DIR + "/lucene/index-method";
-	String CORPUS_FOLDER = HOME_DIR + "/corpus/norm-method";
+	public static String INDEX_FOLDER = HOME_DIR + "/lucene/index-method";
+	public static String CORPUS_FOLDER = HOME_DIR + "/corpus/norm-method";
+
+	public static String STOPWORD_DIR = "./pp-data";
+	public static String SAMURAI_DIR = "./samurai-data";
+	public static String MAX_ENT_MODELS_DIR = "./models";
 
 	public static double SIGNIFICANCE_THRESHOLD = 0.0001;
 	public final static int WINDOW_SIZE = 2;

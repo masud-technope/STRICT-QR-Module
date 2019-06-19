@@ -2,6 +2,8 @@ package strict.samurai.splitter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import strict.ca.usask.cs.srlab.strict.config.StaticData;
 import strict.utility.ContentLoader;
 
 public class SamuraiSplitter {
@@ -19,7 +21,7 @@ public class SamuraiSplitter {
 	
 	protected void loadWordMap() {
 		ArrayList<String> lines = ContentLoader
-				.getAllLinesOptList("./samurai-data/tokendb.txt");
+				.getAllLinesOptList( StaticData.SAMURAI_DIR + "/tokendb.txt");
 		for (String line : lines) {
 			String[] parts = line.split(":");
 			String word = parts[0];

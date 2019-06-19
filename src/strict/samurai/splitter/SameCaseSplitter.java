@@ -1,6 +1,7 @@
 package strict.samurai.splitter;
 
 import java.util.ArrayList;
+import strict.ca.usask.cs.srlab.strict.config.StaticData;
 import strict.utility.ContentLoader;
 
 public class SameCaseSplitter {
@@ -17,12 +18,10 @@ public class SameCaseSplitter {
 	protected void loadPrefixSuffixData() {
 		// loading the prefix and suffix
 		if (prefixes.isEmpty()) {
-			prefixes = ContentLoader
-					.getAllLinesOptList("./samurai-data/prefixes.txt");
+			prefixes = ContentLoader.getAllLinesOptList(StaticData.SAMURAI_DIR + "/prefixes.txt");
 		}
 		if (suffixes.isEmpty()) {
-			suffixes = ContentLoader
-					.getAllLinesOptList("./samurai-data/suffixes.txt");
+			suffixes = ContentLoader.getAllLinesOptList(StaticData.SAMURAI_DIR + "/suffixes.txt");
 		}
 	}
 
@@ -37,12 +36,9 @@ public class SameCaseSplitter {
 			String right = token.substring(i + 1, n);
 			double scoreL = scoreCalc.getScore(left);
 			double scoreR = scoreCalc.getScore(right);
-			boolean prefix = prefixes.contains(left.toLowerCase())
-					|| suffixes.contains(right.toLowerCase());
-			boolean toSplitL = Math.sqrt(scoreL) > Math.max(
-					scoreCalc.getScore(token), score);
-			boolean toSplitR = Math.sqrt(scoreR) > Math.max(
-					scoreCalc.getScore(token), score);
+			boolean prefix = prefixes.contains(left.toLowerCase()) || suffixes.contains(right.toLowerCase());
+			boolean toSplitL = Math.sqrt(scoreL) > Math.max(scoreCalc.getScore(token), score);
+			boolean toSplitR = Math.sqrt(scoreR) > Math.max(scoreCalc.getScore(token), score);
 			if (!prefix && toSplitL && toSplitR) {
 				if (scoreL + scoreR > maxScore) {
 					maxScore = scoreL + scoreR;
@@ -52,8 +48,8 @@ public class SameCaseSplitter {
 				String temp = splitToken(right, score);
 				if (temp.length() > right.length()) {
 					splitted = left + " " + temp;
-				}else{
-					splitted=left+" "+right;
+				} else {
+					splitted = left + " " + right;
 				}
 			}
 			i++;

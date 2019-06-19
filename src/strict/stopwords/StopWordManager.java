@@ -5,14 +5,16 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+
+import strict.ca.usask.cs.srlab.strict.config.StaticData;
 import strict.utility.ContentLoader;
 
 public class StopWordManager {
 
 	public ArrayList<String> stopList;
-	String stopDir = "./pp-data/stop-words-english-total.txt";
-	String javaKeywordFile = "./pp-data/java-keywords.txt";
-	String CppKeywordFile = "./pp-data/cpp-keywords.txt";
+	String stopDir = StaticData.STOPWORD_DIR + "/stop-words-english-total.txt";
+	String javaKeywordFile = StaticData.STOPWORD_DIR + "/java-keywords.txt";
+	String CppKeywordFile = StaticData.STOPWORD_DIR + "/cpp-keywords.txt";
 
 	public StopWordManager() {
 		// initialize the Hash set
@@ -31,9 +33,10 @@ public class StopWordManager {
 			scanner.close();
 
 			// now add the keywords
-			//ArrayList<String> keywords = ContentLoader.getAllLinesOptList(javaKeywordFile);
+			// ArrayList<String> keywords =
+			// ContentLoader.getAllLinesOptList(javaKeywordFile);
 			// String[] keywords=ContentLoader.getAllLines(CppKeywordFile);
-			//this.stopList.addAll(keywords);
+			// this.stopList.addAll(keywords);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

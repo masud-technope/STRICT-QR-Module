@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import javax.management.Query;
+
 import org.jgraph.graph.DefaultEdge;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
@@ -62,7 +64,7 @@ public class SearchTermProvider {
 		this.bugReport = bugReport;
 		if (tagger == null) {
 			tagger = new MaxentTagger(
-					"./models/english-left3words-distsim.tagger");
+					StaticData.MAX_ENT_MODELS_DIR+"/english-left3words-distsim.tagger");
 		}
 		this.sentences = getAllSentences();
 		this.textGraph = new WordNetworkMaker(sentences).createWordNetwork();
@@ -587,13 +589,13 @@ public class SearchTermProvider {
 	}
 
 	public String deliverBestQuery(EntropyCalc entCalc) {
-		String title = BugReportLoader.loadBugReportTitle(this.repository,
+		/*String title = BugReportLoader.loadBugReportTitle(this.repository,
 				bugID);
 		String bugReport = BugReportLoader
-				.loadBugReport(this.repository, bugID);
+				.loadBugReport(this.repository, bugID); */
 
 		SearchTermProvider stProvider = new SearchTermProvider(repository,
-				bugID, title, bugReport);
+				bugID, bugtitle, bugReport);
 		String trQuery = stProvider.provideSearchQuery("TR");
 		String prQuery = stProvider.provideSearchQuery("PR");
 		String tprQuery = stProvider.provideSearchQuery("TPR");
@@ -610,6 +612,8 @@ public class SearchTermProvider {
 		candidateQueryMap.put("PRC", bugID + "\t" + prcQuery);
 		candidateQueryMap.put("TPRC", bugID + "\t" + tprcQuery);
 		candidateQueryMap.put("ALL", bugID + "\t" + allQuery);
+		
+		System.out.println("Candidates:"+candidateQueryMap);
 
 		BestQueryPredictor bestQueryPredictor = new BestQueryPredictor(
 				repository, bugID, candidateQueryMap, entCalc);
@@ -620,12 +624,14 @@ public class SearchTermProvider {
 
 	public static void main(String[] args) {
 
+		qd.config.StaticData.HOME_DIR=StaticData.HOME_DIR;
+		
 		String repoName = "eclipse.jdt.debug";
 
 		EntropyCalc entCalc = new EntropyCalc(repoName, StaticData.INDEX_FOLDER
 				+ "/" + repoName, StaticData.CORPUS_FOLDER + "/" + repoName);
 
-		int[] bugs = { 5653, 28195, 301584, 68233, 11030 };
+		int[] bugs = { 5653, 9057 };
 
 		for (int bugID : bugs) {
 			// int bugID = 5653;
@@ -663,6 +669,5 @@ public class SearchTermProvider {
 			System.out.println("Time spent:" + (end - start) / 1000
 					+ " seconds");
 		}
-
 	}
 }
