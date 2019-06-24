@@ -11,6 +11,7 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 
+import strict.ca.usask.cs.srlab.strict.config.StaticData;
 import strict.query.QueryToken;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
@@ -33,9 +34,10 @@ public class POSNetworkMaker {
 		this.tokendb = new HashMap<>();
 		// this.adjacent = new AdjacencyScoreProvider(sentences);
 		// this.adjacent.collectAdjacentTermsLocal();
-		if (tagger == null)
+		if (tagger == null) {
 			tagger = new MaxentTagger(
-					"./models/english-left3words-distsim.tagger");
+					StaticData.MAX_ENT_MODELS_DIR+"/english-left3words-distsim.tagger");
+		}
 		this.coocCountMap = new HashMap<>();
 	}
 

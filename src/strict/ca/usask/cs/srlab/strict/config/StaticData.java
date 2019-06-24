@@ -9,9 +9,9 @@ public class StaticData {
 	public static String INDEX_FOLDER = HOME_DIR + "/lucene/index-method";
 	public static String CORPUS_FOLDER = HOME_DIR + "/corpus/norm-method";
 
-	public static String STOPWORD_DIR = "./pp-data";
-	public static String SAMURAI_DIR = "./samurai-data";
-	public static String MAX_ENT_MODELS_DIR = "./models";
+	public static String STOPWORD_DIR = HOME_DIR+ "/pp-data";
+	public static String SAMURAI_DIR = HOME_DIR + "/samurai-data";
+	public static String MAX_ENT_MODELS_DIR = HOME_DIR+"/models";
 
 	public static double SIGNIFICANCE_THRESHOLD = 0.0001;
 	public final static int WINDOW_SIZE = 2;

@@ -16,7 +16,6 @@ import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 
 import qd.core.EntropyCalc;
 import qd.model.prediction.BestQueryPredictor;
-import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import strict.stopwords.StopWordManager;
 import strict.text.normalizer.TextNormalizer;
 import strict.utility.BugReportLoader;
@@ -38,7 +37,7 @@ public class SearchTermProvider {
 	String bugtitle;
 	String bugReport;
 	final int MAX_TOKEN_IN_QUERY = 10;
-	static MaxentTagger tagger = null;
+	
 
 	boolean includeTFIDF = false;
 	boolean addTitleScores = false;
@@ -62,10 +61,6 @@ public class SearchTermProvider {
 		this.repository = repository;
 		this.bugtitle = title;
 		this.bugReport = bugReport;
-		if (tagger == null) {
-			tagger = new MaxentTagger(
-					StaticData.MAX_ENT_MODELS_DIR+"/english-left3words-distsim.tagger");
-		}
 		this.sentences = getAllSentences();
 		this.textGraph = new WordNetworkMaker(sentences).createWordNetwork();
 		this.wtextGraph = new WordNetworkMaker(sentences)
@@ -631,7 +626,7 @@ public class SearchTermProvider {
 		EntropyCalc entCalc = new EntropyCalc(repoName, StaticData.INDEX_FOLDER
 				+ "/" + repoName, StaticData.CORPUS_FOLDER + "/" + repoName);
 
-		int[] bugs = { 5653, 9057 };
+		int[] bugs = { 5653};
 
 		for (int bugID : bugs) {
 			// int bugID = 5653;
