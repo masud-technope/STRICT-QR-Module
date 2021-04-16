@@ -2,7 +2,6 @@ package strict.graph;
 
 import java.util.HashMap;
 import java.util.Set;
-
 import org.jgraph.graph.DefaultEdge;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;

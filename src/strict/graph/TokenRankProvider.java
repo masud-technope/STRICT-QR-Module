@@ -2,42 +2,62 @@ package strict.graph;
 
 import java.util.HashMap;
 import java.util.Set;
+
 import org.jgraph.graph.DefaultEdge;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
-import strict.ca.usask.cs.srlab.strict.config.StaticData;
-import strict.query.QueryToken;
 
-public class TextRankProvider {
+import proposed.query.QueryToken;
+import config.StaticData;
+import utility.MyItemSorter;
+
+public class TokenRankProvider {
 	public SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> wgraph;
 	public DirectedGraph<String, DefaultEdge> graph;
 	HashMap<String, QueryToken> tokendb;
 	HashMap<String, Double> oldScoreMap;
 	HashMap<String, Double> newScoreMap;
-	final double INITIAL_VERTEX_SCORE = StaticData.INITIAL_TERM_WEIGHT;
-	final double DAMPING_FACTOR = StaticData.DAMPING_FACTOR;
-	final int MAX_ITERATION = StaticData.MAX_ITERATION;
+	boolean isPOS = false;
+	final double EDGE_WEIGHT_TH = 0.25;
+	double INITIAL_VERTEX_SCORE = StaticData.INITIAL_TERM_WEIGHT;
+	double DAMPING_FACTOR = StaticData.DAMPING_FACTOR;
+	final int MAX_ITERATION = 100;
 
 	HashMap<String, Double> initializerMap;
 	boolean customIniit = false;
 
-	public TextRankProvider(SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> wgraph,
-			HashMap<String, QueryToken> tokendb) {
+	public TokenRankProvider(SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> wgraph,
+			HashMap<String, QueryToken> tokendb, boolean isPOS) {
 		// initialization of different objects
 		// weighted graph constructor
 		this.wgraph = wgraph;
 		this.tokendb = tokendb;
 		this.oldScoreMap = new HashMap<>();
 		this.newScoreMap = new HashMap<>();
+		this.isPOS = isPOS;
 	}
 
-	public TextRankProvider(DirectedGraph<String, DefaultEdge> graph, HashMap<String, QueryToken> tokendb) {
+	public TokenRankProvider(DirectedGraph<String, DefaultEdge> graph, HashMap<String, QueryToken> tokendb,
+			boolean isPOS) {
 		// un-weighted graph constructor
 		this.graph = graph;
 		this.tokendb = tokendb;
 		this.oldScoreMap = new HashMap<>();
 		this.newScoreMap = new HashMap<>();
+		this.isPOS = isPOS;
+	}
+
+	public TokenRankProvider(DirectedGraph<String, DefaultEdge> graph, HashMap<String, QueryToken> tokendb,
+			boolean isPOS, HashMap<String, Double> initializerMap) {
+		// un-weighted graph constructor
+		this.graph = graph;
+		this.tokendb = tokendb;
+		this.oldScoreMap = new HashMap<>();
+		this.newScoreMap = new HashMap<>();
+		this.isPOS = isPOS;
+		this.initializerMap = initializerMap;
+		this.customIniit = true;
 	}
 
 	boolean checkSignificantDiff(double oldV, double newV) {
@@ -49,7 +69,7 @@ public class TextRankProvider {
 		return diff > StaticData.SIGNIFICANCE_THRESHOLD ? true : false;
 	}
 
-	public HashMap<String, QueryToken> calculateTextRankWeighted() {
+	public HashMap<String, QueryToken> calculateTokenRankWeighted() {
 		// calculating token rank score
 		double d = this.DAMPING_FACTOR;
 		double N = wgraph.vertexSet().size();
@@ -96,14 +116,18 @@ public class TextRankProvider {
 			for (String key : newScoreMap.keySet()) {
 				oldScoreMap.put(key, newScoreMap.get(key));
 			}
-
 			itercount++;
 			if (insignificant == wgraph.vertexSet().size())
 				enoughIteration = true;
 			if (itercount == MAX_ITERATION)
 				enoughIteration = true;
 		}
+		// saving token ranks
 		recordNormalizeScores();
+		// sort the token rank scores
+		// this.tokendb = MyItemSorter.sortItemMap(this.tokendb);
+		// showing token rank scores
+		// showTokenRanks();
 		return this.tokendb;
 	}
 
@@ -115,13 +139,31 @@ public class TextRankProvider {
 		}
 	}
 
-	public HashMap<String, QueryToken> calculateTextRank() {
+	protected void initializeWithTFIDF() {
+		for (String vertex : graph.vertexSet()) {
+			if (this.initializerMap.containsKey(vertex)) {
+				oldScoreMap.put(vertex, this.initializerMap.get(vertex));
+				newScoreMap.put(vertex, this.initializerMap.get(vertex));
+			} else if (this.initializerMap.containsKey(vertex.toLowerCase())) {
+				oldScoreMap.put(vertex, this.initializerMap.get(vertex.toLowerCase()));
+				newScoreMap.put(vertex, this.initializerMap.get(vertex.toLowerCase()));
+			} else {
+				oldScoreMap.put(vertex, this.INITIAL_VERTEX_SCORE);
+				newScoreMap.put(vertex, this.INITIAL_VERTEX_SCORE);
+			}
+		}
+	}
+
+	public HashMap<String, QueryToken> calculateTokenRank() {
 		// calculating token rank score
 		double d = this.DAMPING_FACTOR;
 		double N = graph.vertexSet().size();
 		// initially putting 1 to all
-
-		this.initializeGraphBasic();
+		if (customIniit) {
+			this.initializeWithTFIDF();
+		} else {
+			this.initializeGraphBasic();
+		}
 
 		boolean enoughIteration = false;
 		int itercount = 0;
@@ -137,8 +179,7 @@ public class TextRankProvider {
 					String source1 = graph.getEdgeSource(edge);
 					int outdegree = graph.outDegreeOf(source1);
 
-					// score and out degree should be affected by the edge
-					// weight
+					// score and out degree should be affected by the edge weight
 					double score = oldScoreMap.get(source1);
 					// score=score*this.EDGE_WEIGHT_TH;
 
@@ -147,26 +188,38 @@ public class TextRankProvider {
 					else if (outdegree > 1)
 						comingScore += (score / outdegree);
 				}
+
 				comingScore = comingScore * d;
 				trank += comingScore;
 				boolean significant = checkSignificantDiff(oldScoreMap.get(vertex).doubleValue(), trank);
 				if (significant) {
 					newScoreMap.put(vertex, trank);
 				} else {
+					newScoreMap.put(vertex, trank);
 					insignificant++;
 				}
 			}
-			// coping values to new Hash Map
-			for (String key : newScoreMap.keySet()) {
-				oldScoreMap.put(key, newScoreMap.get(key));
-			}
+
 			itercount++;
+
 			if (insignificant == graph.vertexSet().size())
 				enoughIteration = true;
 			if (itercount == this.MAX_ITERATION)
 				enoughIteration = true;
+
+			// coping values to new Hash Map
+			for (String key : newScoreMap.keySet()) {
+				oldScoreMap.put(key, newScoreMap.get(key));
+			}
+
 		}
+
+		// saving token ranks into tokendb
 		recordNormalizeScores();
+		// sort the token rank scores
+		// this.tokendb = MyItemSorter.sortItemMap(this.tokendb);
+		// showing token rank scores
+		// showTokenRanks();
 		return this.tokendb;
 	}
 
@@ -183,18 +236,19 @@ public class TextRankProvider {
 			double score = newScoreMap.get(key).doubleValue();
 			score = score / maxRank;
 			// this.newScoreMap.put(key, score);
-
 			QueryToken qtoken = tokendb.get(key);
-			qtoken.textRankScore = score;
+			if (!isPOS)
+				qtoken.tokenRankScore = score;
+			else
+				qtoken.posRankScore = score;
 			tokendb.put(key, qtoken);
 		}
 	}
 
-	protected HashMap<String, Double> getCalculatedTokenRanks() {
-		HashMap<String, Double> rankMap = new HashMap<>();
+	protected void showTokenRanks() {
+		// showing token ranks
 		for (String key : this.tokendb.keySet()) {
-			rankMap.put(key, tokendb.get(key).textRankScore);
+			System.out.println(key + " " + tokendb.get(key).tokenRankScore);
 		}
-		return rankMap;
 	}
 }

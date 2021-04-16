@@ -1,35 +1,25 @@
 package strict.query;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import javax.management.Query;
-
 import org.jgraph.graph.DefaultEdge;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
-
-import qd.core.EntropyCalc;
-import qd.model.prediction.BestQueryPredictor;
 import qd.model.prediction.sampling.BestQueryPredictorSampled;
 import strict.stopwords.StopWordManager;
 import strict.text.normalizer.TextNormalizer;
-import strict.utility.BugReportLoader;
-import strict.utility.ContentWriter;
 import strict.utility.ItemSorter;
 import strict.utility.MiscUtility;
 import strict.utility.MyItemSorter;
 import strict.ca.usask.cs.srlab.strict.config.StaticData;
+import strict.graph.GraphUtility;
 import strict.graph.KCoreScoreProvider;
-import strict.graph.POSNetworkMaker;
-import strict.graph.POSRankProvider;
-import strict.graph.TextRankProvider;
-import strict.graph.WordNetworkMaker;
+import strict.graph.POSRankManager;
+import strict.graph.TextRankManager;
+import strict.stemmer.WordNormalizer;
 
 public class SearchTermProvider {
 
@@ -37,17 +27,13 @@ public class SearchTermProvider {
 	String repository;
 	String bugtitle;
 	String bugReport;
-	final int MAX_TOKEN_IN_QUERY = 10;
+	final int MAX_TOKEN_IN_QUERY = StaticData.SUGGESTED_KEYWORD_COUNT;
 	final String TECHNIQUE_NAME = "strict";
 	final int predModelCount = 50;
 
-	boolean includeTFIDF = false;
-	boolean addTitleScores = false;
-	boolean customInitialize = false;
-
 	/****** strong options *******/
-	boolean addTitle = true;
-	boolean applyDynamicSize = false;
+	boolean addTitle = StaticData.ADD_TITLE;
+	boolean applyDynamicSize = StaticData.USE_DYNAMIC_KEYWORD_THRESHOLD;
 	/**************/
 
 	DirectedGraph<String, DefaultEdge> textGraph;
@@ -60,20 +46,22 @@ public class SearchTermProvider {
 		// initialization
 		this.bugID = bugID;
 		this.repository = repository;
-		this.bugtitle = title;
+		this.bugtitle = getNormalizeTitle(title);
 		this.bugReport = bugReport;
 		this.sentences = getAllSentences();
-		this.textGraph = new WordNetworkMaker(sentences).createWordNetwork();
-		this.wtextGraph = new WordNetworkMaker(sentences).createWeightedWordNetwork();
-		this.posGraph = new POSNetworkMaker(sentences).createPOSNetwork();
-		this.wposGraph = new POSNetworkMaker(sentences).createWeightedPOSNetwork();
+		this.textGraph = GraphUtility.getWordNetwork(sentences);
+		this.wtextGraph = GraphUtility.getWeightedWordNetwork(sentences);
+		this.posGraph = GraphUtility.getPOSNetwork(sentences);
+		this.wposGraph = GraphUtility.getWeightedPOSNetwork(sentences);
 	}
 
-	protected HashMap<String, QueryToken> getQueryCoreRankScoresTR() {
+	protected HashMap<String, QueryToken> getQueryCoreRankScoresTRC() {
 		KCoreScoreProvider kcsProvider = new KCoreScoreProvider(wtextGraph, StaticData.KCORE_SIZE);
 		HashMap<String, Double> kcsMap = kcsProvider.provideKCoreScores();
-		// HashMap<String, Double> kcsMap = kcsProvider
-		// .provideKCoreScoresV2(false);
+		return convert2WKScore(kcsMap);
+	}
+
+	protected HashMap<String, QueryToken> convert2WKScore(HashMap<String, Double> kcsMap) {
 		HashMap<String, QueryToken> tokendb = new HashMap<>();
 		for (String key : kcsMap.keySet()) {
 			double kcsScore = kcsMap.get(key);
@@ -85,125 +73,42 @@ public class SearchTermProvider {
 		return tokendb;
 	}
 
-	protected HashMap<String, QueryToken> getQueryCoreRankScoresPR() {
+	protected HashMap<String, QueryToken> getQueryCoreRankScoresPRC() {
 		KCoreScoreProvider kcsProvider = new KCoreScoreProvider(wposGraph, StaticData.KCORE_SIZE);
 		HashMap<String, Double> kcsMap = kcsProvider.provideKCoreScores();
-		// HashMap<String, Double> kcsMap =
-		// kcsProvider.provideKCoreScoresV2(true);
-		HashMap<String, QueryToken> tokendb = new HashMap<>();
-		for (String key : kcsMap.keySet()) {
-			double kcsScore = kcsMap.get(key);
-			QueryToken qtoken = new QueryToken();
-			qtoken.token = key;
-			qtoken.coreRankScore = kcsScore;
-			tokendb.put(key, qtoken);
-		}
-		return tokendb;
-	}
-
-	protected ArrayList<String> extractNormalizedSentencesV2(String content) {
-		content = content.replace("\n", ". ");
-		String separator = "(?<=[.?!:;])\\s+(?=[a-zA-Z0-9])";
-		String[] sentences = content.split(separator);
-		ArrayList<String> normSentences = new ArrayList<>();
-		for (String sentence : sentences) {
-			// String normSentence = new TextNormalizer()
-			// .normalizeSimpleCodeDiscardSmall(sentence);
-			String normSentence = new TextNormalizer().normalizeSimpleDiscardSmallwithOrder(sentence);
-			if (!normSentence.trim().isEmpty()) {
-				normSentences.add(normSentence);
-			}
-		}
-		return normSentences;
-	}
-
-	protected DirectedGraph<String, DefaultEdge> getWordNetwork(ArrayList<String> sentences) {
-		WordNetworkMaker wnMaker = new WordNetworkMaker(sentences);
-		return wnMaker.createWordNetwork();
-	}
-
-	protected SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> getWeightedWordNetwork(
-			ArrayList<String> sentences) {
-		WordNetworkMaker wnMaker = new WordNetworkMaker(sentences);
-		return wnMaker.createWeightedWordNetwork();
-	}
-
-	protected DirectedGraph<String, DefaultEdge> getPOSNetwork(ArrayList<String> sentences) {
-		POSNetworkMaker pnMaker = new POSNetworkMaker(sentences);
-		return pnMaker.createPOSNetwork();
-	}
-
-	protected SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> getWeightedPOSNetwork(
-			ArrayList<String> sentences) {
-		POSNetworkMaker wnMaker = new POSNetworkMaker(sentences);
-		return wnMaker.createWeightedPOSNetwork();
+		return convert2WKScore(kcsMap);
 	}
 
 	protected ArrayList<String> getAllSentences() {
 		QTextCollector textcollector = new QTextCollector(this.bugtitle, this.bugReport);
-		return textcollector.collectQuerySentencesV3();
+		return textcollector.collectQuerySentences();
 	}
 
-	protected HashMap<String, QueryToken> initializeTokensDB(DirectedGraph<String, DefaultEdge> myGraph) {
-		HashMap<String, QueryToken> tokendb = new HashMap<>();
-		for (String node : myGraph.vertexSet()) {
-			QueryToken qtoken = new QueryToken();
-			qtoken.token = node;
-			tokendb.put(node, qtoken);
-		}
-		return tokendb;
-	}
-
-	protected HashMap<String, QueryToken> initializeTokensDB(
-			SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> myGraph) {
-		HashMap<String, QueryToken> tokendb = new HashMap<>();
-		for (String node : myGraph.vertexSet()) {
-			QueryToken qtoken = new QueryToken();
-			qtoken.token = node;
-			tokendb.put(node, qtoken);
-		}
-		return tokendb;
-	}
-
-	protected HashMap<String, QueryToken> getQueryTextRankScores() {
-		// collect query token scores
-		HashMap<String, QueryToken> tokendb = initializeTokensDB(textGraph);
-		TextRankProvider trProvider = new TextRankProvider(this.textGraph, tokendb);
-		return trProvider.calculateTextRank();
-	}
-
-	protected HashMap<String, QueryToken> getQueryPOSRankScores() {
-		// collect query token scores
-		HashMap<String, QueryToken> tokendb = initializeTokensDB(this.posGraph);
-		POSRankProvider prProvider = new POSRankProvider(this.posGraph, tokendb);
-		return prProvider.calculatePOSRank();
-	}
-
-	protected String normalizeTitle(String title) {
+	protected String getNormalizeTitle(String title) {
 		return new TextNormalizer().normalizeSimpleDiscardSmallwithOrder(title);
 	}
 
 	protected HashMap<String, QueryToken> getTextRank() {
-		HashMap<String, QueryToken> textRankMap = new HashMap<>();
-		textRankMap = getQueryTextRankScores();
-		textRankMap = filterStopWords(textRankMap);
-		textRankMap = filterLowScores(textRankMap, "TR");
-		textRankMap = MiscUtility.normalizeScore(textRankMap, "TR");
-		return textRankMap;
+		HashMap<String, QueryToken> tokendb = GraphUtility.initializeTokensDB(this.textGraph);
+		TextRankManager manager = new TextRankManager(this.textGraph, tokendb);
+		return manager.getTextRank();
 	}
 
 	protected HashMap<String, QueryToken> getPOSRank() {
-		HashMap<String, QueryToken> posRankMap = getQueryPOSRankScores();
-		posRankMap = filterStopWords(posRankMap);
-		posRankMap = filterLowScores(posRankMap, "PR");
-		posRankMap = MiscUtility.normalizeScore(posRankMap, "PR");
-		return posRankMap;
+		HashMap<String, QueryToken> tokendb = GraphUtility.initializeTokensDB(this.posGraph);
+		POSRankManager manager = new POSRankManager(this.posGraph, tokendb);
+		return manager.getPOSRank();
+	}
+
+	protected HashMap<String, QueryToken> getTRC() {
+		return this.getQueryCoreRankScoresTRC();
+	}
+
+	protected HashMap<String, QueryToken> getPRC() {
+		return this.getQueryCoreRankScoresPRC();
 	}
 
 	public String provideSearchQuery(String scoreKey) {
-		// forming query without any training
-		this.bugtitle = normalizeTitle(this.bugtitle);
-
 		HashMap<String, QueryToken> textRankMap = new HashMap<>();
 		HashMap<String, QueryToken> posRankMap = new HashMap<>();
 		HashMap<String, QueryToken> coreRankMapTR = new HashMap<>();
@@ -226,26 +131,18 @@ public class SearchTermProvider {
 			combineddb = getCombinedBordaScores(textRankMap, posRankMap);
 			break;
 		case "TRC":
-			coreRankMapTR = getQueryCoreRankScoresTR();
+			coreRankMapTR = getQueryCoreRankScoresTRC();
 			combineddb = transferScores(coreRankMapTR, "TRC");
 			break;
 		case "PRC":
-			coreRankMapPR = getQueryCoreRankScoresPR();
+			coreRankMapPR = getQueryCoreRankScoresPRC();
 			combineddb = transferScores(coreRankMapPR, "PRC");
 			break;
+
 		case "TPRC":
-			coreRankMapTR = getQueryCoreRankScoresTR();
-			coreRankMapPR = getQueryCoreRankScoresPR();
+			coreRankMapTR = getQueryCoreRankScoresTRC();
+			coreRankMapPR = getQueryCoreRankScoresPRC();
 			combineddb = addCoreRankScores(combineddb, coreRankMapPR);
-			combineddb = addCoreRankScores(combineddb, coreRankMapTR);
-			break;
-		case "ALL":
-			textRankMap = getTextRank();
-			posRankMap = getPOSRank();
-			combineddb = getCombinedBordaScores(textRankMap, posRankMap);
-			coreRankMapTR = getQueryCoreRankScoresTR();
-			combineddb = addCoreRankScores(combineddb, coreRankMapPR);
-			coreRankMapPR = getQueryCoreRankScoresPR();
 			combineddb = addCoreRankScores(combineddb, coreRankMapTR);
 			break;
 
@@ -259,7 +156,8 @@ public class SearchTermProvider {
 	protected double getDOI(int index, int N) {
 		return (1 - (double) index / N);
 	}
-
+	
+	
 	protected HashMap<String, Double> getCombinedBordaScores(HashMap<String, QueryToken> tokenRankMap,
 			HashMap<String, QueryToken> posRankMap) {
 		// extracting final query terms
@@ -290,10 +188,6 @@ public class SearchTermProvider {
 			}
 		}
 
-		if (addTitleScores) {
-			combineddb = this.addTitleTermScores(combineddb);
-		}
-
 		return combineddb;
 	}
 
@@ -319,60 +213,6 @@ public class SearchTermProvider {
 		return combineddb;
 	}
 
-	protected HashMap<String, Double> addTitleTermScores(HashMap<String, Double> combineddb) {
-
-		bugtitle = new TextNormalizer().normalizeSimpleCodeDiscardSmall(bugtitle);
-		String[] titlewords = bugtitle.split("\\p{Punct}+|\\d+|\\s+");
-
-		for (int i = 0; i < titlewords.length; i++) {
-
-			double doi = getDOI(0, titlewords.length);
-			String key = titlewords[i];
-			if (!combineddb.containsKey(key)) {
-				combineddb.put(key, doi * StaticData.gamma);
-			} else {
-				double score = combineddb.get(key) + doi * StaticData.gamma;
-				combineddb.put(key, score);
-			}
-		}
-		return combineddb;
-	}
-
-	protected ArrayList<String> addBugTitle(ArrayList<String> suggested) {
-		bugtitle = new TextNormalizer().normalizeSimpleCodeDiscardSmall(bugtitle);
-		ArrayList<String> terms = MiscUtility.str2List(bugtitle);
-		// add title carefully by avoiding duplicates
-		for (String term : terms) {
-			if (!suggested.contains(term)) {
-				suggested.add(term);
-			}
-		}
-		return suggested;
-	}
-
-	protected void addCandidateScores(HashMap<String, Double> combineddb, HashMap<String, QueryToken> tokenRankMap,
-			HashMap<String, QueryToken> posRankMap) {
-		String candidateFile = StaticData.HOME_DIR + "/weight-training/" + repository + "/" + bugID + ".txt";
-
-		ArrayList<String> candidateTerms = new ArrayList<>();
-		for (String key : combineddb.keySet()) {
-			if (key.trim().isEmpty())
-				continue;
-			String cline = key;
-			if (tokenRankMap.containsKey(key)) {
-				cline += "\t" + tokenRankMap.get(key).textRankScore;
-			} else {
-				cline += "\t" + 0.0;
-			}
-			if (posRankMap.containsKey(key)) {
-				cline += "\t" + posRankMap.get(key).posRankScore;
-			} else {
-				cline += "\t" + 0.0;
-			}
-			candidateTerms.add(cline);
-		}
-		ContentWriter.writeContent(candidateFile, candidateTerms);
-	}
 
 	protected HashMap<String, Double> transferScores(HashMap<String, QueryToken> scoreMap, String scoreKey) {
 		HashMap<String, Double> tempMap = new HashMap<>();
@@ -398,49 +238,6 @@ public class SearchTermProvider {
 		return tempMap;
 	}
 
-	protected HashMap<String, QueryToken> filterStopWords(HashMap<String, QueryToken> tokenMap) {
-		// filtering the stop words
-		HashSet<String> tokens = new HashSet<>(tokenMap.keySet());
-		StopWordManager stopManager = new StopWordManager();
-		for (String key : tokens) {
-			if (stopManager.stopList.contains(key)) {
-				QueryToken qtoken = tokenMap.get(key);
-				tokenMap.remove(qtoken);
-			}
-		}
-		return tokenMap;
-	}
-
-	protected HashMap<String, QueryToken> filterLowScores(HashMap<String, QueryToken> tokenMap, String type) {
-		HashSet<String> tokens = new HashSet<>(tokenMap.keySet());
-		for (String key : tokens) {
-			double score = 0;
-			switch (type) {
-			case "TR":
-				score = tokenMap.get(key).textRankScore;
-				break;
-			case "PR":
-				score = tokenMap.get(key).posRankScore;
-				break;
-			case "TRC":
-				score = tokenMap.get(key).coreRankScore;
-				break;
-			case "PRC":
-				score = tokenMap.get(key).coreRankScore;
-				break;
-			}
-			if (score < StaticData.INITIAL_TERM_WEIGHT) {
-				tokenMap.remove(key);
-			}
-		}
-		return tokenMap;
-	}
-
-	protected String filterStopWords(String sentence) {
-		// refine the sentence
-		return new StopWordManager().getRefinedSentence(sentence);
-	}
-
 	protected HashMap<String, QueryToken> getOnlyTopK(HashMap<String, QueryToken> tokenMap, String type) {
 		List<Map.Entry<String, QueryToken>> sorted = null;
 		if (type.equals("TR")) {
@@ -459,34 +256,7 @@ public class SearchTermProvider {
 		return tempMap;
 	}
 
-	protected String expandCCWords(String sentence) {
-		// expanding the CC words
-		String expanded = new String();
-		String[] tokens = sentence.split("\\s+");
-		for (String token : tokens) {
-			ArrayList<String> decomposed = decomposeCamelCase(token);
-			if (decomposed.size() > 1) {
-				decomposed = MiscUtility.filterSmallTokens(decomposed);
-				expanded += token + "\t" + MiscUtility.list2Str(decomposed) + "\t";
-			} else {
-				expanded += token + "\t";
-			}
-		}
-		return expanded.trim();
-	}
-
-	protected ArrayList<String> decomposeCamelCase(String token) {
-		// decomposing camel case tokens using regex
-		ArrayList<String> refined = new ArrayList<>();
-		String camRegex = "([a-z])([A-Z]+)";
-		String replacement = "$1\t$2";
-		String filtered = token.replaceAll(camRegex, replacement);
-		String[] ftokens = filtered.split("\\s+");
-		refined.addAll(Arrays.asList(ftokens));
-		return refined;
-	}
-
-	public String collectBugTitle() {
+	public String getBugTitle() {
 		return this.bugtitle;
 	}
 
@@ -524,30 +294,25 @@ public class SearchTermProvider {
 	protected String getQueryFinalizedBorda(HashMap<String, Double> combineddb) {
 
 		List<Map.Entry<String, Double>> sorted = ItemSorter.sortHashMapDouble(combineddb);
-		ArrayList<String> suggested = new ArrayList<>();
 
-		int DYNAMIC_SIZE = (int) (sorted.size() * StaticData.KEYWORD_RATIO); // 33%
+		ArrayList<String> suggested = new ArrayList<>();
+		int MAX_QUERY_SIZE = StaticData.SUGGESTED_KEYWORD_COUNT;
+
+		if (StaticData.USE_DYNAMIC_KEYWORD_THRESHOLD) {
+			MAX_QUERY_SIZE = (int) (sorted.size() * StaticData.KEYWORD_RATIO);
+		}
 
 		for (int i = 0; i < sorted.size(); i++) {
 			String token = sorted.get(i).getKey();
+
 			suggested.add(token);
-			if (applyDynamicSize) {
-				if (suggested.size() == DYNAMIC_SIZE) {
-					break;
-				}
-			} else {
-				if (suggested.size() == MAX_TOKEN_IN_QUERY) {
-					break;
-				}
+			if (suggested.size() == MAX_QUERY_SIZE) {
+				break;
 			}
-		}
-		// add the title as is
-		if (addTitle) {
-			suggested = addBugTitle(suggested);
 		}
 
 		String queryStr = MiscUtility.list2Str(suggested);
-		String expanded = expandCCWords(queryStr);
+		String expanded = new WordNormalizer().expandCCWords(queryStr);
 		return new StopWordManager().getRefinedSentence(expanded);
 	}
 
@@ -581,51 +346,4 @@ public class SearchTermProvider {
 
 	}
 
-	public static void main(String[] args) {
-
-		qd.config.StaticData.HOME_DIR = StaticData.HOME_DIR;
-
-		String repoName = "eclipse.jdt.debug";
-
-		/*
-		 * EntropyCalc entCalc = new EntropyCalc(repoName, StaticData.INDEX_FOLDER + "/"
-		 * + repoName, StaticData.CORPUS_FOLDER + "/" + repoName);
-		 */
-
-		int[] bugs = { 78853 };
-
-		for (int bugID : bugs) {
-			// int bugID = 5653;
-			long start = System.currentTimeMillis();
-
-			String title = BugReportLoader.loadBugReportTitle(repoName, bugID);
-			String bugReport = BugReportLoader.loadBugReport(repoName, bugID);
-
-			SearchTermProvider stProvider = new SearchTermProvider(repoName, bugID, title, bugReport);
-			String trQuery = stProvider.provideSearchQuery("TR");
-			String prQuery = stProvider.provideSearchQuery("PR");
-			String tprQuery = stProvider.provideSearchQuery("TPR");
-			String trcQuery = stProvider.provideSearchQuery("TRC");
-			String prcQuery = stProvider.provideSearchQuery("PRC");
-			String tprcQuery = stProvider.provideSearchQuery("TPRC");
-			// String allQuery = stProvider.provideSearchQuery("ALL");
-
-			HashMap<String, String> candidateQueryMap = new HashMap<>();
-			candidateQueryMap.put("TR", bugID + "\t" + trQuery);
-			candidateQueryMap.put("PR", bugID + "\t" + prQuery);
-			candidateQueryMap.put("TPR", bugID + "\t" + tprQuery);
-			candidateQueryMap.put("TRC", bugID + "\t" + trcQuery);
-			candidateQueryMap.put("PRC", bugID + "\t" + prcQuery);
-			candidateQueryMap.put("TPRC", bugID + "\t" + tprcQuery);
-			// candidateQueryMap.put("ALL", bugID + "\t" + allQuery);
-
-			BestQueryPredictorSampled bestQueryPredictor = new BestQueryPredictorSampled(repoName, bugID,
-					candidateQueryMap, "strict", 100);
-
-			System.out.println("Best Query:" + bestQueryPredictor.deliverBestQuery());
-
-			long end = System.currentTimeMillis();
-			System.out.println("Time spent:" + (end - start) / 1000 + " seconds");
-		}
-	}
 }

@@ -2,6 +2,8 @@ package strict.stemmer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import strict.utility.MiscUtility;
 import strict.utility.MiscUtilityJobs;
 
 public class WordNormalizer {
@@ -16,6 +18,10 @@ public class WordNormalizer {
 	public WordNormalizer(String sentence) {
 		// initialization
 		this.sentence = sentence;
+	}
+
+	public WordNormalizer() {
+		// default constructor
 	}
 
 	protected ArrayList<String> decomposeDotToken(String token) {
@@ -42,6 +48,22 @@ public class WordNormalizer {
 		return refined;
 	}
 
+	public String expandCCWords(String sentence) {
+		// expanding the CC words
+		String expanded = new String();
+		String[] tokens = sentence.split("\\s+");
+		for (String token : tokens) {
+			ArrayList<String> decomposed = decomposeCamelCase(token);
+			if (decomposed.size() > 1) {
+				decomposed = MiscUtility.filterSmallTokens(decomposed);
+				expanded += token + "\t" + MiscUtility.list2Str(decomposed) + "\t";
+			} else {
+				expanded += token + "\t";
+			}
+		}
+		return expanded.trim();
+	}
+
 	protected ArrayList<String> removeSpecialChars(String sentence) {
 		// removing special characters
 		String regex = "\\p{Punct}+|\\d+|\\s+";
@@ -57,13 +79,10 @@ public class WordNormalizer {
 		}
 		return refined;
 	}
-	
-	protected String removeTags(String content)
-	{
-	 return content.replaceAll("\\<[^>]*>","");
+
+	protected String removeTags(String content) {
+		return content.replaceAll("\\<[^>]*>", "");
 	}
-	
-	
 
 	public String normalizeSentenceWithCCD() {
 		// normalize sentence with camel case decomposition
@@ -112,8 +131,8 @@ public class WordNormalizer {
 		// normalize the sentences
 		ArrayList<String> refinedTokens = new ArrayList<>();
 		// Stemmer stemmer = new Stemmer();
-		//removing tags
-		//this.sentence=removeTags(this.sentence);
+		// removing tags
+		// this.sentence=removeTags(this.sentence);
 		ArrayList<String> cleanedTokens = removeSpecialChars(this.sentence);
 		String prevToken = new String();
 		for (String token : cleanedTokens) {
@@ -144,9 +163,8 @@ public class WordNormalizer {
 				// stemming is not helping. avoid it.
 				/*
 				 * String stoken = stemmer.stripAffixes(token.toLowerCase()); if
-				 * (stoken.length() > 2) { // significant token if
-				 * (!stoken.equals(prevToken)) refinedTokens.add(stoken);
-				 * prevToken = stoken; }
+				 * (stoken.length() > 2) { // significant token if (!stoken.equals(prevToken))
+				 * refinedTokens.add(stoken); prevToken = stoken; }
 				 */
 			}
 		}

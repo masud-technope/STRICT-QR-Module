@@ -3,7 +3,6 @@ package strict.text.normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
 import strict.samurai.splitter.SamuraiSplitter;
 import strict.stopwords.StopWordManager;
 import strict.utility.MiscUtility;
