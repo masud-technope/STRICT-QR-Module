@@ -153,7 +153,7 @@ public class TextNormalizer {
 		return this.content;
 	}
 
-	protected ArrayList<String> extractCodeItem(ArrayList<String> words) {
+	public ArrayList<String> extractCodeItem(ArrayList<String> words) {
 		// extracting camel-case letters
 		ArrayList<String> codeTokens = new ArrayList<>();
 		for (String token : words) {
@@ -164,7 +164,7 @@ public class TextNormalizer {
 		return codeTokens;
 	}
 
-	protected ArrayList<String> decomposeCamelCase(String token) {
+	public ArrayList<String> decomposeCamelCase(String token) {
 		// decomposing camel case tokens using regex
 		ArrayList<String> refined = new ArrayList<>();
 		String camRegex = "([a-z])([A-Z]+)";

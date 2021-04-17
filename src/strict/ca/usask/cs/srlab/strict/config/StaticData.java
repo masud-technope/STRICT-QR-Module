@@ -20,20 +20,18 @@ public class StaticData {
 	public static double DAMPING_FACTOR = 0.85;
 	public static int SUGGESTED_KEYWORD_COUNT = 10;
 	public static int MAX_ITERATION = 100;
-	public static boolean USE_DYNAMIC_KEYWORD_THRESHOLD = false;
-	public static boolean ADD_CODE_ELEM = false;
 	public static double KEYWORD_RATIO = 0.33;
 	public static int KCORE_SIZE = 2;
 
 	public static boolean ADD_TITLE = true;
+	public static boolean USE_DYNAMIC_KEYWORD_THRESHOLD = false;
+	public static boolean ADD_CODE_ELEM = false;
 
 	public static double alpha = 1;// 0.45309403507098156;
 	public static double beta = 1;// 0.8374424351745824;
 	public static double gamma = 1;// 0.3753504417175002;
 
-	// public static double alpha = 0.45309403507098156;
-	// public static double beta = 0.8374424351745824;
-	// public static double gamma = 0.3753504417175002;
+	public static String ARFF_HEADER_FILE="./qdiff-model/arffheader.txt";
 
 	public static double REDUCTION_GAIN_TH = 0.50;
 

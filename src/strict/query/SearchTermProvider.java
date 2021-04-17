@@ -22,7 +22,6 @@ import strict.graph.TextRankManager;
 import strict.stemmer.WordNormalizer;
 
 public class SearchTermProvider {
-
 	int bugID;
 	String repository;
 	String bugtitle;
@@ -53,6 +52,10 @@ public class SearchTermProvider {
 		this.wtextGraph = GraphUtility.getWeightedWordNetwork(sentences);
 		this.posGraph = GraphUtility.getPOSNetwork(sentences);
 		this.wposGraph = GraphUtility.getWeightedPOSNetwork(sentences);
+	}
+
+	public SearchTermProvider(ArrayList<String> expandedCCTokens) {
+		this.textGraph = GraphUtility.getWordNetwork(expandedCCTokens);
 	}
 
 	protected HashMap<String, QueryToken> getQueryCoreRankScoresTRC() {
@@ -109,6 +112,7 @@ public class SearchTermProvider {
 	}
 
 	public String provideSearchQuery(String scoreKey) {
+
 		HashMap<String, QueryToken> textRankMap = new HashMap<>();
 		HashMap<String, QueryToken> posRankMap = new HashMap<>();
 		HashMap<String, QueryToken> coreRankMapTR = new HashMap<>();
@@ -156,8 +160,7 @@ public class SearchTermProvider {
 	protected double getDOI(int index, int N) {
 		return (1 - (double) index / N);
 	}
-	
-	
+
 	protected HashMap<String, Double> getCombinedBordaScores(HashMap<String, QueryToken> tokenRankMap,
 			HashMap<String, QueryToken> posRankMap) {
 		// extracting final query terms
@@ -213,7 +216,6 @@ public class SearchTermProvider {
 		return combineddb;
 	}
 
-
 	protected HashMap<String, Double> transferScores(HashMap<String, QueryToken> scoreMap, String scoreKey) {
 		HashMap<String, Double> tempMap = new HashMap<>();
 		for (String key : scoreMap.keySet()) {
@@ -236,28 +238,6 @@ public class SearchTermProvider {
 			}
 		}
 		return tempMap;
-	}
-
-	protected HashMap<String, QueryToken> getOnlyTopK(HashMap<String, QueryToken> tokenMap, String type) {
-		List<Map.Entry<String, QueryToken>> sorted = null;
-		if (type.equals("TR")) {
-			sorted = MyItemSorter.sortQTokensByTR(tokenMap);
-		} else if (type.equals("PR")) {
-			sorted = MyItemSorter.sortQTokensByTR(tokenMap);
-		}
-		HashMap<String, QueryToken> tempMap = new HashMap<>();
-		int index = 0;
-		for (Map.Entry<String, QueryToken> entry : sorted) {
-			tempMap.put(entry.getKey(), entry.getValue());
-			index++;
-			if (index == MAX_TOKEN_IN_QUERY)
-				break;
-		}
-		return tempMap;
-	}
-
-	public String getBugTitle() {
-		return this.bugtitle;
 	}
 
 	protected HashMap<String, Double> gatherScores(List<Map.Entry<String, QueryToken>> sortedList,
