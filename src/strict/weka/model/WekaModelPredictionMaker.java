@@ -3,10 +3,8 @@ package strict.weka.model;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Random;
-import config.StaticData;
-import selectedbugs.SelectedBugs;
-import utility.ContentLoader;
-import utility.ContentWriter;
+import strict.utility.ContentWriter;
+import strict.utility.SelectedBugs;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
@@ -25,19 +23,23 @@ import weka.filters.MultiFilter;
 import weka.filters.unsupervised.attribute.Remove;
 import weka.filters.unsupervised.instance.Randomize;
 
-public class WekaRunDemoModelMaker {
+public class WekaModelPredictionMaker {
 
 	String repoName;
 	String arffFile;
 	double maxAccuracy = 0;
 	double bestKFolds = 0;
 	String predictionResult;
+	String predictionFile;
 
-	public WekaRunDemoModelMaker(String repoName) {
+	public WekaModelPredictionMaker(String repoName, String arffFile) {
 		this.repoName = repoName;
-		this.arffFile = StaticData.SOTraceQData2 + "/Proposed-STRICT/qdiff-model-Dec2020/model-dec23-8pm-ext/" + repoName
-				+ ".arff";
+		this.arffFile = arffFile;
 		this.predictionResult = new String();
+	}
+	
+	public void setPredictionFile(String filePath) {
+		this.predictionFile = filePath;
 	}
 
 	protected Instances loadDataFromARFF() {
@@ -92,7 +94,7 @@ public class WekaRunDemoModelMaker {
 		Logistic logistic = new Logistic();
 		logistic.setMaxIts(-1);
 		logistic.setRidge(1.0E-8);
-		logistic.setNumDecimalPlaces(4);
+		// logistic.setNumDecimalPlaces(4);
 		return logistic;
 	}
 
@@ -119,7 +121,7 @@ public class WekaRunDemoModelMaker {
 
 	protected NaiveBayes getNaiveBayes() {
 		NaiveBayes nbayes = new NaiveBayes();
-		nbayes.setNumDecimalPlaces(2);
+		// nbayes.setNumDecimalPlaces(2);
 		return nbayes;
 	}
 
@@ -196,27 +198,27 @@ public class WekaRunDemoModelMaker {
 		return classifier;
 	}
 
-	protected void determineBestClassifications(int seed, String algoKey) {
+	public String determineBestClassifications(int seed, String algoKey) {
 
 		Instances loadedData = loadDataFromARFF();
-
 		// removing the ID
 		// loadedData = removeUnexpectedColumns(loadedData);
-
+		
 		// setting the class Index
 		loadedData.setClassIndex(loadedData.numAttributes() - 1);
 
 		int TOTAL_INSTANCES = loadedData.numInstances();
-		
-		int totalBugCount = SelectedBugs.loadSelectedFilteredBugs(repoName).size();
 
-		for (int K = 2; K <= TOTAL_INSTANCES; K += 5) {
+		int totalBugCount = SelectedBugs.loadSelectedBugs(repoName).size();
 
-			try {
+		for (int K = 2; K <= TOTAL_INSTANCES; K += 3 ) {
+
+			try { 
 				// basic Random Forest
 				Classifier classifier = getFilteredClassifier(seed, algoKey);
 				Evaluation eval = new Evaluation(loadedData);
 
+				
 				StringBuffer predictionSB = new StringBuffer();
 				Range attributesToShow = new Range("1");
 				Boolean outputDistributions = new Boolean(true);
@@ -224,12 +226,13 @@ public class WekaRunDemoModelMaker {
 				PlainText predictionOutput = new PlainText();
 				predictionOutput.setBuffer(predictionSB);
 				predictionOutput.setOutputDistribution(true);
+				
 
 				// you need to set the attribute index here as well. We are
 				// collecting the instance ID here
 				predictionOutput.setAttributes("1");
 
-				eval.crossValidateModel(classifier, loadedData, K, new Random(1), predictionOutput, attributesToShow,
+				eval.crossValidateModel(classifier, loadedData, K, new Random(1), predictionSB, attributesToShow,
 						outputDistributions);
 
 				double acc = eval.pctCorrect();
@@ -238,39 +241,20 @@ public class WekaRunDemoModelMaker {
 					bestKFolds = K;
 					predictionResult = predictionSB.toString();
 				}
-
-				// System.out.println(repoName + " " + algoKey + " #Fold=" + K + ": Accuracy " +acc);
-
 				System.gc();
+				
 			} catch (Exception exc) {
-				// handle the exception
+				exc.printStackTrace();
 			}
 		}
 
 		System.out.println(repoName + "\t" + bestKFolds + "\t" + maxAccuracy);
 		// System.out.println(predictionResult);
-		String outputFile = StaticData.SOTraceQData2 + "/Proposed-STRICT/qdiff-model-Dec2020/predictions-dec23-8pm-ext/" + repoName
-				+ ".txt";
-		saveEvaluations(outputFile, predictionResult);
+
+		return predictionResult;
 	}
 
-	protected void saveEvaluations(String outputFile, String evaluationResult) {
-		ContentWriter.writeContent(outputFile, evaluationResult);
-	}
-
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		// String repoName = "lang";
-		int seed = 100;
-		// String algoKey = "LR";
-		// String[] algoKeys = {"ST" };
-
-		String[] repos = ContentLoader.getAllLines("./repos.txt");
-
-		for (String repoName : repos) {
-			new WekaRunDemoModelMaker(repoName).determineBestClassifications(seed, "ST");
-			// System.out.println("===========");
-			
-		}
+	public void saveEvaluations(String evaluationResult) {
+		ContentWriter.writeContent(this.predictionFile, evaluationResult);
 	}
 }

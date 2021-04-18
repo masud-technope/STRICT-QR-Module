@@ -16,7 +16,24 @@ public class MiscUtility {
 		}
 		return temp.trim();
 	}
-	
+
+	public static String list2StrWithNewLine(ArrayList<String> list) {
+		String temp = new String();
+		for (String item : list) {
+			temp += item + "\n";
+		}
+		return temp.trim();
+	}
+
+	public static ArrayList<String> str2ListForNewLine(String content) {
+		String[] items = content.split("\n");
+		ArrayList<String> list = new ArrayList<>();
+		for (String item : items) {
+			list.add(item);
+		}
+		return list;
+	}
+
 	public static String list2Str(HashSet<String> list) {
 		String temp = new String();
 		for (String item : list) {
@@ -52,8 +69,7 @@ public class MiscUtility {
 		return countmap;
 	}
 
-	public static HashMap<String, QueryToken> normalizeScore(
-			HashMap<String, QueryToken> tokenScoreMap, String type) {
+	public static HashMap<String, QueryToken> normalizeScore(HashMap<String, QueryToken> tokenScoreMap, String type) {
 		double maxScore = 0;
 		for (String key : tokenScoreMap.keySet()) {
 			QueryToken qtoken = tokenScoreMap.get(key);

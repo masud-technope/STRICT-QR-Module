@@ -57,9 +57,11 @@ public class SearchQueryProvider {
 		for (int bugID : this.selectedBugs) {
 			String bugReport = BugReportLoader.loadBugReport(repoName, bugID);
 			String title = BugReportLoader.loadBugReportTitle(repoName, bugID);
+			
 			SearchTermProvider provider = new SearchTermProvider(repoName, bugID, title, bugReport);
 			String suggestedKeywords = provider.provideSearchQuery(scoreKey);
 			String suggestedQuery = new String(suggestedKeywords);
+			
 			if (StaticData.ADD_CODE_ELEM) {
 				String codetokens = getCamelCaseQuery(bugReport);
 				suggestedQuery += "\t" + codetokens;
@@ -68,6 +70,7 @@ public class SearchQueryProvider {
 				String titletokens = getNormalizedTitle(title);
 				suggestedQuery += "\t" + titletokens;
 			}
+			
 			String queryLine = bugID + "\t" + suggestedQuery;
 			queries.add(queryLine);
 		}
