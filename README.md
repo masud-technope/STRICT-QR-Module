@@ -10,3 +10,14 @@ Experimental Data
 ---------------------
 Please check the  [**replication package**](https://github.com/masud-technope/STRICT-Replication-Package) for more details.
 
+
+Getting Started
+---------------------
+```java
+String repoName = "eclipse.jdt.debug";
+		ArrayList<Integer> selectedBugs = SelectedBugs.loadSelectedBugs(repoName);
+		String scoreKey = "TPR";
+		StaticData.ADD_CODE_ELEM=false;
+		StaticData.ADD_TITLE=true;
+		ArrayList<String> queries = new SearchQueryProvider(repoName, scoreKey, selectedBugs).provideSearchQueries();
+```
