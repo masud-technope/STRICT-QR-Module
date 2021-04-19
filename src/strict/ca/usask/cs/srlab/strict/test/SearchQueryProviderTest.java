@@ -16,7 +16,6 @@ public class SearchQueryProviderTest {
 		String scoreKey = "TPR";
 		StaticData.ADD_CODE_ELEM=false;
 		StaticData.ADD_TITLE=true;
-		
 		ArrayList<String> queries = new SearchQueryProvider(repoName, scoreKey, selectedBugs).provideSearchQueries();
 		MiscUtility.showItems(queries);
 	}
