@@ -11,10 +11,10 @@ public class SearchQueryProviderTest {
 
 	@Test
 	public void testProvideSearchQueries() {
-		String repoName = "jedit-4.2";
+		String repoName = "eclipse.jdt.debug";
 		ArrayList<Integer> selectedBugs = SelectedBugs.loadSelectedBugs(repoName);
 		String scoreKey = "TPR";
-		StaticData.ADD_CODE_ELEM=true;
+		StaticData.ADD_CODE_ELEM=false;
 		StaticData.ADD_TITLE=true;
 		
 		ArrayList<String> queries = new SearchQueryProvider(repoName, scoreKey, selectedBugs).provideSearchQueries();

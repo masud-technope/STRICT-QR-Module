@@ -10,14 +10,14 @@ public class SearchTermProviderTest {
 	
 	@Test
 	public void testTPRQuery() {
-		String repoName="bookkeeper-4.1.0";
-		int bugID=355;
-		String title ="Ledger recovery will mark ledger as closed with -1, in case of slow bookie is added to ensemble during  recovery add";
+		String repoName="eclipse.jdt.debug";
+		int bugID=217994;
+		String title ="[patch][launching] Run/Debug honors JRE VM args before Launcher VM args";
 		String bugReport = BugReportLoader.loadBugReport(repoName, bugID);
 		StaticData.SUGGESTED_KEYWORD_COUNT = 10;
 		
 		SearchTermProvider provider=new SearchTermProvider(repoName, bugID, title, bugReport);
-		String query = provider.provideSearchQuery("PR");
+		String query = provider.provideSearchQuery("TPR");
 		System.out.println(query);
 	}
 }
